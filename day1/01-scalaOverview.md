@@ -90,7 +90,7 @@ descend(X,Y) :- child(X,Z),
 ?- descend(martha,X)
 ````
 
-See also a full example in prolog: solving a Cludeo problem.
+See also a full example in prolog: solving a Cluedo problem.
 
 ---
 ![bg](background.jpg)
@@ -168,7 +168,7 @@ Here the variable ```animal``` is instanciated with the value ```cat```. The var
 - Mercury: a mix of logical and functional langage
 https://mercurylang.org/
 
-- Shen langagea: https://shenlanguage.org/
+- Shen langage: https://shenlanguage.org/
 
 Very very accurate types !! https://bluishcoder.co.nz/2019/10/03/defining-types-in-shen.html
 
@@ -209,14 +209,14 @@ Since Scala 3: type coherency improvements.
 
 ## c) Some classification in Programming 
 
-This is not exhaustive. This is here to introduce some useful patterns.
+The following classification is not exhaustive. It is an opportunity to introduce some useful patterns.
 
 - Imperative (well known)
 - Logical
 - Functional
   - Haskell
   - ML familiy language
-  - Front ent: elm, purescript
+  - Front end: elm, purescript
 
 ---
 ![bg](background.jpg)
@@ -327,9 +327,9 @@ Here printFuture is only displayed one time (when we declare the variable).
 
 What is the link with concurrency ?
 
-- We can decompose a complex task onto several smaller one
+- We can decompose a complex task into several smaller one
 - Each small task:
-  - will be independent of the other one since:there is no side effect
+  - will be independent of the other one since there is no side effect
   - can be run in parallel
 
 We just need to aggregate the results at the end.
@@ -394,7 +394,7 @@ Develop front-end with a functional language instead of using javascript !
 
 ## Polymorphism
 
-Generally speaking: a function with several form (implies its arity)
+Generally speaking: a function with several forms (implies its arity)
 
 - Universal
     - parametric (generic)
@@ -609,7 +609,7 @@ To go further, see: https://medium.com/@shannonbarnes_85491/algebraic-data-types
 
 ## Category theory
 
-This theroy is an abstraction level over many mathematics field. 
+This theroy is an abstraction level over many mathematic fields. 
 
 As regards programmation:
 - type cosmogony
