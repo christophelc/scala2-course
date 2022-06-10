@@ -1,4 +1,4 @@
-package com.axa.go.wax
+package com.example
 
 import org.scalatest.{ FlatSpec, MustMatchers }
 

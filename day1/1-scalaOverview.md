@@ -657,3 +657,13 @@ To go further, see Bartosz Milewski's courses.
 - Write some signature of functions only and try TDD approach
 - Have always a working code. Step by step: have a strategy for publishing incremental versions
 - Take time to read the code once finished. Code review if possible
+
+
+---
+
+## Annnex: Type Hierarchy
+
+![bg](background.jpg)
+
+https://www.scala-lang.org/files/archive/spec/2.12/12-the-scala-standard-library.html
+![width:600px](classhierarchy.png)

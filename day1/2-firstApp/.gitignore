@@ -1,5 +1,2 @@
 .bsp
-metastore_db
-validationReport.txt
-validConf
-.DS_Store
+target
