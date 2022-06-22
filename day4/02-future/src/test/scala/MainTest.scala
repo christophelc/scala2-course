@@ -67,7 +67,7 @@ class MainTest extends FlatSpec with MustMatchers {
     assert(delayMs < 2000)
   }
 
-  "Reducing future result" must "xx" in {
+  "Reducing future result" must "be 0" in {
     val f = (0 to 4).map(i => Future(i))
     // bad: do nothing ! See BetterFutureTesting
     Future.reduceLeft(f)((r1, r2) => r1 + r2).map(finalResut => assert(finalResut == 0))

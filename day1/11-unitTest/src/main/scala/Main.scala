@@ -7,11 +7,11 @@ object SparkMain {
 	// - create a report that gives a summary
 
 	// functional spec ?
-	- do we have all the information we need ?
+	// - do we have all the information we need ?
 
-	// provide:a
-	- technical spec (include error cases)
-	- unit tests 
-	- integration tests
+	// provide:
+	//- technical spec (include error cases)
+	//- unit tests
+	//- integration tests
   }
 }

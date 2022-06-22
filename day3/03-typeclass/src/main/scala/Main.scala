@@ -17,7 +17,7 @@ object Main {
     Type class derivation is a way to automatically generate given instances for type classes
     which satisfy some simple condition
     => Shapeless in Scala 2
-    => Scala 3 derives keywork
+    => Scala 3 derives keyword
 
     aim: avoid boilerplate code (equal Eq for example...)
    */
