@@ -1,6 +1,6 @@
 import Dependencies._
 
-name := "Spark-standalone"
+name := "Monix"
 
 version := "0.1-snapshot"
 
