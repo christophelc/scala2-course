@@ -3,7 +3,7 @@ import monix.reactive.Observer
 import scala.concurrent.Future
 
 // Example2 of https://www.programcreek.com/scala/monix.execution.Ack
-class TestObserver[T] extends Observer[T] {
+class UtilTestObserver[T] extends Observer[T] {
   var received = Vector.empty[T]
   var errorsReceived = Vector.empty[Throwable]
   var isComplete: Boolean = false

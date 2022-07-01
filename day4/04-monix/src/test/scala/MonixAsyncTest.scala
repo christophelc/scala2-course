@@ -11,14 +11,17 @@ import scala.concurrent.duration._
  * all the other examples are extracted from:
  *  https://levelup.gitconnected.com/asynchronous-boundary-in-monix-task-900995ba8a28
  */
-class MonixMainTest extends MonixSpec {
+class MonixAsyncTest extends MonixSpec {
 
   lazy val sc1 = Scheduler.singleThread("single") // backed by SingleThreadExecutor
   lazy val sc2 = Scheduler.fixedPool("fixed", poolSize = 10) // backed by FixedThreadExecutor
-  lazy val sc3 = Scheduler.computation(parallelism = 10, name="cpu-bound") // backed by ForkJoinPool
+  lazy val sc3 = Scheduler.computation(parallelism = 10, name = "cpu-bound") // backed by ForkJoinPool
   lazy val scIo = Scheduler.io("io-bound") // backed by CachedThreadPool
 
-  val printCurrentThread: Task[Unit] = Task { println(s"current thread: ${Thread.currentThread().getName}") }
+  val printCurrentThread: Task[Unit] = Task {
+    println(s"current thread: ${Thread.currentThread().getName}")
+  }
+
   def lightTask(name: String, n: Int): Task[Int] =
     printCurrentThread *> Task.eval {
       println(s"task: $name")
@@ -47,7 +50,7 @@ class MonixMainTest extends MonixSpec {
     import monix.reactive._
     // Nothing happens here, as observable is lazily
     // evaluated only when the subscription happens!`
-    val observer = new TestObserver[Long]
+    val observer = new UtilTestObserver[Long]
     val tick: Observable[Long] = {
       Observable.interval(100.millisecond)
         // common filtering and mapping
@@ -92,6 +95,7 @@ class MonixMainTest extends MonixSpec {
         res2 <- lightTask("light2", 2)
       } yield res1 + res2
     }
+
     program().runSyncUnsafe()
     assert(true)
   }
@@ -119,6 +123,7 @@ class MonixMainTest extends MonixSpec {
         res2 <- lightTask("light2", 2) // light task running in the block thread pool too !
       } yield res1 + res2
     }
+
     programWithAsyncBoundary().runSyncUnsafe()
   }
 
@@ -131,6 +136,7 @@ class MonixMainTest extends MonixSpec {
         res2 <- lightTask("light2", 2)
       } yield res1 + res2
     }
+
     def programWithAsyncBoundaryShiftBack2(): Task[Int] = {
       for {
         num1 <- lightTask("light1", 1).asyncBoundary(scIo)
@@ -138,6 +144,7 @@ class MonixMainTest extends MonixSpec {
         res2 <- lightTask("light2", 2)
       } yield res1 + res2
     }
+
     programWithAsyncBoundaryShiftBack2().runSyncUnsafe()
   }
 
@@ -150,6 +157,7 @@ class MonixMainTest extends MonixSpec {
         res2 <- heavyTask("heavy2", num2).executeOn(scIo) // blocking-13
       } yield res1 + res2
     }
+
     programWithExecuteOn().runSyncUnsafe()
   }
 
@@ -164,6 +172,5 @@ class MonixMainTest extends MonixSpec {
       Task.parMap2(p1, p2)(_ + _)
     }
     assert(programParallel().runSyncUnsafe() == 3)
-
   }
 }
