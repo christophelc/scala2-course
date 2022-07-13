@@ -13,7 +13,13 @@ object RuntimeExecutors {
       case Seq(t1, t2) => EnvDataModulo(Some(TablePlant.reduce(t1, t2)))
     }
   }
-  case class EnvDataForAggregation(data: Seq[Env]) extends Env
+  case class EnvDataForAggregation(data: Seq[Env]) extends Env {
+    def flatten: EnvDataForAggregation = EnvDataForAggregation(data.foldLeft(Nil: Seq[Env])((acc, env) =>
+      env match {
+        case EnvDataForAggregation(seq) => acc ++ seq
+        case env => acc :+ env
+      }))
+  }
 
   implicit final class RawFileRuntime(rawFile: RawFile) extends Runtime[RawFile] {
     override def executeSync(env: Env = Env.Empty): Env = {
