@@ -115,17 +115,19 @@ object AdvancedExample2 {
     import controlflow.model.RuntimeExecutors._
     val oResultA: Observable[Env] = t1RawFile.observable()
 
-    // flatMap when only one parent dependendcy
-    val oResult1: Observable[Env] = oResultA.flatMap(result1 => t1Batch1Modulo.observable(result1))
-    val oResult2: Observable[Env] = oResultA.flatMap(result1 => t1Batch2Modulo.observable(result1))
-    val oResult3: Observable[Env] = oResultA.flatMap(result1 => t1Batch3Modulo.observable(result1))
+    // don't do flatMap since we will evaluate oResultA again:
+    //val oResult1: Observable[Env] = oResultA.flatMap(result1 => t1Batch1Modulo.observable(result1))
+    // But do this:
+    val oResult1: Observable[Env] = oResultA.map(result1 => t1Batch1Modulo.executeSync(result1))
+    val oResult2: Observable[Env] = oResultA.map(result1 => t1Batch2Modulo.executeSync(result1))
+    val oResult3: Observable[Env] = oResultA.map(result1 => t1Batch3Modulo.executeSync(result1))
     // zip when there are at least two parent dependencies
     val oDataForAggregation12: Observable[Env] = for ((r1, r2) <- oResult1.zip(oResult2)) yield EnvDataForAggregation(Seq(r1, r2))
     val oDataForAggregation23: Observable[Env] = for ((r2, r3) <- oResult2.zip(oResult3)) yield EnvDataForAggregation(Seq(r2, r3))
-    val oResult12: Observable[Env] = oDataForAggregation12.flatMap(tDataForAggregation => t1Batch12Aggregate.observable(tDataForAggregation))
-    val oResult23: Observable[Env] = oDataForAggregation23.flatMap(tDataForAggregation => t1Batch23Aggregate.observable(tDataForAggregation))
+    val oResult12: Observable[Env] = oDataForAggregation12.map(tDataForAggregation => t1Batch12Aggregate.executeSync(tDataForAggregation))
+    val oResult23: Observable[Env] = oDataForAggregation23.map(tDataForAggregation => t1Batch23Aggregate.executeSync(tDataForAggregation))
     val oDataForAggregation1223: Observable[Env] = for ((r12, r23) <- oResult12.zip(oResult23)) yield EnvDataForAggregation(Seq(r12, r23))
-    val oResult1223: Observable[Env] = oDataForAggregation1223.flatMap(tDataForAggregation => t1Batch123Aggregate.observable(tDataForAggregation))
+    val oResult1223: Observable[Env] = oDataForAggregation1223.map(tDataForAggregation => t1Batch123Aggregate.executeSync(tDataForAggregation))
     oResult1223.firstL.map(env2TablePlant)
   }
   def runAsyncFromTreeForAllTables(tree: Tree[DataType]): Task[Seq[TablePlant]] = {
@@ -178,6 +180,8 @@ object AdvancedExample2 {
     val resultAsyncReactive = Await.result(runAsyncReactive().runToFuture, Duration("5 seconds"))
     assert(resultAsyncReactive == resultSync)
     // final implementation
+    println()
+    println("Final implementation:")
     val resultAsyncFromTree = Await.result(runAsyncFromTreeForAllTables(tree).runToFuture, Duration("5 seconds"))
     println()
     println("Result (2 tables) with general algorithm:")

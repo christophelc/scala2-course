@@ -31,7 +31,7 @@ class MonixObservableTest extends MonixSpec {
       "Hello2!"
     }
     val obs2 = Observable.evalOnce {
-      println("effect obs2")
+      println("effect: obs2")
       "result:2"
     }
     val obs3 = Observable.evalOnce {
@@ -40,12 +40,9 @@ class MonixObservableTest extends MonixSpec {
     }
     val obsF2 = obs.flatMap(_ => obs2)
     val obsF3 = obs.flatMap(_ => obs3)
-    val taskF2 = obsF2.foreachL(println)
-    val taskF3 = obsF3.foreachL(println)
-    taskF2.runToFuture
-    taskF2.runToFuture.foreach(println)
-    println("----")
-    taskF3.runToFuture
-    taskF3.runToFuture.foreach(println)
+    val obsF = obsF2.zip(obsF3).map(r => r._1 + " " + r._2)
+    val taskF = obsF.foreachL(println)
+    taskF.runToFuture
+    taskF.runToFuture.foreach(println)
   }
 }

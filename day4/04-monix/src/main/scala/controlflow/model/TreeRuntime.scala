@@ -5,13 +5,13 @@ import controlflow.model.RuntimeExecutors.EnvDataForAggregation
 import monix.reactive.Observable
 
 object TreeRuntime {
-  private def envObservable(data: DataType, env: Env): Observable[Env] = {
+  private def envObservable(data: DataType, env: Env): Env = {
     import controlflow.model.RuntimeExecutors._
     data match {
-      case rawFile: RawFile => rawFile.observable()
-      case batch: BatchModulo  => batch.observable(env)
-      case batch: BatchAggregate => batch.observable(env)
-      case _ => Observable(env) // do nothing
+      case rawFile: RawFile => rawFile.executeSync()
+      case batch: BatchModulo  => batch.executeSync(env)
+      case batch: BatchAggregate => batch.executeSync(env)
+      case _ => env // do nothing
     }
   }
 
@@ -30,7 +30,7 @@ object TreeRuntime {
           envs = Map(vertice.id -> Observable(Env.Empty)),
           computed = Map(vertice.id -> Observable(Env.Empty)))
         case Seq(parentId) =>
-          val newEnv: Observable[Env] = state.computed(parentId).flatMap(env => envObservable(vertice.data, env))
+          val newEnv: Observable[Env] = state.computed(parentId).map(env => envObservable(vertice.data, env))
           state.copy(
             envs = (state.envs ++ Map(vertice.id -> newEnv)) - parentId,
             computed = state.computed ++ Map(vertice.id -> newEnv)
@@ -39,7 +39,7 @@ object TreeRuntime {
           val parentsObs: Seq[Observable[Env]] = parentsId.map(childId => state.computed(childId))
           val zipObsEnv: Observable[Env] = parentsObs.tail.foldLeft(parentsObs.head)((acc, obs) =>
             acc.zip(obs).map(env => EnvDataForAggregation(Seq(env._1, env._2)).flatten))
-          val newEnv: Observable[Env] = zipObsEnv.flatMap(env => envObservable(vertice.data, env))
+          val newEnv: Observable[Env] = zipObsEnv.map(env => envObservable(vertice.data, env))
             state.copy(
               envs = (state.envs ++ Map(vertice.id -> newEnv)).filterKeys(id => !parentsId.contains(id)),
               computed = state.computed ++ Map(vertice.id -> newEnv)
