@@ -136,3 +136,14 @@ Monix gather several sub-projects:
   - With a Scheduler argument: shift to the tread pool of the Scheduler
 
 
+---
+![bg](background.jpg)
+
+## Examples
+
+- Sync
+- Async
+- Observer
+- Advanced example: Graph of Tasks execution
+
+

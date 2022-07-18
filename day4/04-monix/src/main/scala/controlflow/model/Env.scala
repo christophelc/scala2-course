@@ -1,4 +1,4 @@
-package model
+package controlflow.model
 
 trait Env
 object Env {

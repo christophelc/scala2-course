@@ -1,4 +1,4 @@
-package model
+package controlflow.model
 
 case class Vertice[T](id: String, data: T)
 case class Edge(srcId: String, destId: String)
@@ -32,21 +32,26 @@ case class Tree[T](val vertices: Seq[Vertice[T]] = Nil, val edges: Seq[Edge] = N
   }
   case class TraverseState(iter: Iterable[Vertice[T]], computed: Seq[String] = Nil)
 
+  def traverse(currentV: Vertice[T], computed: Seq[String] = Nil): Iterable[Vertice[T]] = traverseWithState(currentV, computed).iter
+
   /**
    * List vertices in an order where required tasks are first computed
    * @param currentV current vertice to compute
    * @param computed already computed vertices
    * @return List of vertices ordered for easy computation
    */
-  def traverse(currentV: Vertice[T], computed: Seq[String] = Nil): Iterable[Vertice[T]] = {
+  private def traverseWithState(currentV: Vertice[T], computed: Seq[String]): TraverseState = {
     findChildren(currentV.id)
       .flatMap(childId => vertices.find(_.id == childId))
       .filter(vertice => !pointSyncs.contains(vertice.id) || pointSyncs(vertice.id).forall(parentId => computed.contains(parentId))) match {
-      case Nil => Iterable(currentV)
-      case children => children.foldLeft(TraverseState(iter = Iterable(currentV)))((state, vertice) =>
+      case Nil => TraverseState(iter = Iterable(currentV), computed = Nil)
+      case children => children.foldLeft(TraverseState(iter = Iterable(currentV), computed = computed))((state, vertice) => {
+        val updateState = traverseWithState(vertice, state.computed :+ vertice.id)
         state.copy(
-          iter = state.iter ++ traverse(vertice, state.computed :+ vertice.id),
-          computed = state.computed :+ vertice.id)).iter
+          iter = state.iter ++ updateState.iter,
+          computed = (state.computed :+ vertice.id) ++ updateState.computed)
+      }
+      )
     }
   }
 }

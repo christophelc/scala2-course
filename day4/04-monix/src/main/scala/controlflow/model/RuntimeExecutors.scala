@@ -1,7 +1,7 @@
-package model
+package controlflow.model
 
-import model.DataType.RawFile
-import model.data.TablePlant
+import controlflow.model.DataType.RawFile
+import controlflow.model.data.TablePlant
 import util.FileIO
 
 object RuntimeExecutors {
@@ -31,6 +31,8 @@ object RuntimeExecutors {
     override def executeSync(env: Env = Env.Empty): Env = {
       env match {
         case envData: EnvDataCsv =>
+          println(s"Executing BatchModulo: ${batchModulo.batchName}.")
+          batchModulo.delaySec.foreach(delay => Thread.sleep(delay * 1000))
           EnvDataModulo(moduloData = envData.csvData.map(table => table.modulo(batchModulo.modulo, batchModulo.offset)))
         case _ => env
       }

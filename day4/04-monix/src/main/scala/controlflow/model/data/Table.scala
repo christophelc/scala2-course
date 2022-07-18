@@ -1,4 +1,4 @@
-package model.data
+package controlflow.model.data
 
 object TablePlant {
   private def multiply(head: RowPlant, tail: Seq[RowPlant]): RowPlant = {

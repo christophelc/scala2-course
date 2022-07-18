@@ -1,13 +1,12 @@
-package model
+package controlflow.model
 
-import model.DataType.RawFile
-import model.RuntimeExecutors.EnvDataForAggregation
-import monix.eval.Task
+import controlflow.model.DataType.RawFile
+import controlflow.model.RuntimeExecutors.EnvDataForAggregation
 import monix.reactive.Observable
 
 object TreeRuntime {
   private def envObservable(data: DataType, env: Env): Observable[Env] = {
-    import model.RuntimeExecutors._
+    import controlflow.model.RuntimeExecutors._
     data match {
       case rawFile: RawFile => rawFile.observable()
       case batch: BatchModulo  => batch.observable(env)
@@ -50,12 +49,8 @@ object TreeRuntime {
     result.envs.values.toSeq
   }
 
-  def executeFromId(id: String, tree: Tree[Observable[Env]]): Seq[Task[Env]] = {
-    val leaves: Seq[Vertice[Observable[Env]]] = tree.findLeaves.flatMap(id => tree.vertices.find(_.id == id))
-    leaves.map(vertice => vertice.data.firstL)
-  }
-  def execute(tree: Tree[DataType]): Seq[Task[Env]] = {
+  def schedule(tree: Tree[DataType]): Seq[Observable[Env]] = {
     val observables: Seq[Observable[Env]] = treeToObservable(tree)
-    observables.map(_.firstL)
+    observables
   }
 }

@@ -77,7 +77,7 @@ class MonixSyncTest extends MonixSpec {
       }
     assert(even(1000000).value)
   }
-  "Coeval as an applicative functor" must "xx" in {
+  "Coeval as an applicative functor" must "run in parallel" in {
     val locationCoeval: Coeval[String] = Coeval.eval("Paris")
     val phoneCoeval: Coeval[String] = Coeval.eval("0102030405")
     val addressCoeval: Coeval[String] = Coeval.eval("123 Eval Avenue")

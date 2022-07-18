@@ -1,6 +1,6 @@
 package util
 
-import model.data.{RowPlant, TablePlant}
+import controlflow.model.data.{RowPlant, TablePlant}
 
 import scala.io.Source
 

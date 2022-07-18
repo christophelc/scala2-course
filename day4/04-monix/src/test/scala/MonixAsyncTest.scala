@@ -4,6 +4,8 @@ import monix.eval.Task
 import scala.concurrent.Await
 import monix.execution.{Cancelable, Scheduler}
 import monix.execution.Scheduler.Implicits.global
+
+import scala.annotation.nowarn
 import scala.concurrent.duration._
 
 /**
@@ -128,7 +130,7 @@ class MonixAsyncTest extends MonixSpec {
   }
 
   "heavyTask1" must "be run in io bound thread pool whereas light1 is in main thread and light2 is in default thread pool" in {
-    def programWithAsyncBoundaryShiftBack(): Task[Int] = {
+    @nowarn def programWithAsyncBoundaryShiftBack(): Task[Int] = {
       for {
         num1 <- lightTask("light1", 1).asyncBoundary(scIo)
         res1 <- heavyTask("heavy1", num1)
@@ -162,7 +164,7 @@ class MonixAsyncTest extends MonixSpec {
   }
 
   "Two task" must "be executed in parallel" in {
-    def programParallel()(implicit sc: Scheduler): Task[Int] = {
+    def programParallel(): Task[Int] = {
       val p1 = lightTask("light1", 1).flatMap { num1 =>
         heavyTask("heavy1", num1).executeOn(scIo)
       }
