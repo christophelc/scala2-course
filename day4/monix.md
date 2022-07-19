@@ -144,6 +144,7 @@ Monix gather several sub-projects:
 - Sync
 - Async
 - Observer
+- Fiber
 - Advanced example: Graph of Tasks execution
 
 
