@@ -8,6 +8,10 @@ object MonixMain {
     println("---------")
     println("Example 2")
     println("---------")
+    println("Pattern 1")
     AdvancedExample2.run(args)
+    println()
+    println("Pattern 2")
+    AdvancedExample2.run2(args)
   }
 }

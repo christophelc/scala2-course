@@ -1,6 +1,6 @@
 import controlflow.model.DataType.RawFile
 import controlflow.model.RuntimeExecutors.EnvDataModulo
-import controlflow.model.data.TablePlant
+import controlflow.model.data.{RowPlant, TablePlant}
 import controlflow.model._
 import monix.eval.Task
 import monix.reactive.Observable
@@ -9,25 +9,6 @@ import scala.annotation.nowarn
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-/**
- *                (TableA)                  (TableB)
- *                  |                       |
- *               RawFileA________          RawFileB____
- *               /       \       \        /       |     \
- *            BatchA1 BatchA2 BatchA3  BatchB1 BatchB2 BatchB3
- *                  \     /  \ /           \    |     /
- *                 BatchA12  BatchA23        BatchB4
- *                        \ /
- *                     BatchA123
- *
- * Vertices at the same level will be executed in //
- * Vertices parent / child link is executed in serial
- *
- * RawFile1, RawFile2: read csv table 1, table2
- * Batch12, Batch13: apply Modulo2
- * Batch22, Batch23, Batch24: apply Modulo3
- * Batch14, Batch25: reduce by applying  (pct_rate_of_growth +1) * (pct_rate_of_growth + 1)
- */
 object AdvancedExample2 {
   val t1RawFile: RawFile = RawFile("table1.csv")
   val t1Batch1Modulo: BatchModulo = BatchModulo(batchName = "BatchA1", modulo = 5, offset = 0)
@@ -44,7 +25,9 @@ object AdvancedExample2 {
   val t2BatchB4Aggregate: BatchAggregate = BatchAggregate(batchName = "BatchB4")
 
   private def env2TablePlant(env: Env): TablePlant = {
-    env match { case EnvDataModulo(Some(tablePlant)) => tablePlant }
+    env match {
+      case EnvDataModulo(Some(tablePlant)) => tablePlant
+    }
   }
 
   // First implementation, only for table1: By hand
@@ -110,6 +93,7 @@ object AdvancedExample2 {
     )
     assert(seq == expected)
   }
+
   // a step further with Observable: onlyOnce here
   def runAsyncReactive(): Task[TablePlant] = {
     import controlflow.model.RuntimeExecutors._
@@ -130,33 +114,98 @@ object AdvancedExample2 {
     val oResult1223: Observable[Env] = oDataForAggregation1223.map(tDataForAggregation => t1Batch123Aggregate.executeSync(tDataForAggregation))
     oResult1223.firstL.map(env2TablePlant)
   }
+
   def runAsyncFromTreeForAllTables(tree: Tree[DataType]): Task[Seq[TablePlant]] = {
     val tasks: Seq[Task[Env]] = TreeRuntime.schedule(tree).map(_.firstL)
     Task.sequence(tasks.map(task => task.map(env2TablePlant)))
   }
 
-  def run(@nowarn args: Array[String]): Unit = {
-    val t2Batch4Aggregate = BatchAggregate(batchName = "BatchB4")
-
+  /**
+   *                (TableA)                  (TableB)
+   *                  |                       |
+   *               RawFileA________          RawFileB____
+   *               /       \       \        /       |     \
+   *            BatchA1 BatchA2 BatchA3  BatchB1 BatchB2 BatchB3
+   *                  \     /  \ /           \    |     /
+   *                 BatchA12  BatchA23        BatchB4
+   *                        \ /
+   *                     BatchA123
+   *
+   * Vertices at the same level will be executed in //
+   * Vertices parent / child link is executed in serial
+   *
+   * RawFile1, RawFile2: read csv table 1, table2
+   * Batch12, Batch13: apply Modulo2
+   * Batch22, Batch23, Batch24: apply Modulo3
+   * Batch14, Batch25: reduce by applying  (pct_rate_of_growth +1) * (pct_rate_of_growth + 1)
+   */
+  def buildTree: Tree[DataType] = {
     val tree: Tree[DataType] = Tree.root[DataType](id = "root", data = DataType.Nothing)
-      .addChild(fromId = "root", id = "t1RawFile",  data = t1RawFile)
+      .addChild(fromId = "root", id = "t1RawFile", data = t1RawFile)
       .addChild(fromId = "t1RawFile", id = "batchA1", data = t1Batch1Modulo)
       .addChild(fromId = "t1RawFile", id = "batchA2", data = t1Batch2Modulo)
       .addChild(fromId = "t1RawFile", id = "batchA3", data = t1Batch3Modulo)
-      .addChild(fromId = "batchA1", id = "batchA12", data= t1Batch12Aggregate)
-      .addChild(fromId = "batchA2", id = "batchA12", data= t1Batch12Aggregate)
-      .addChild(fromId = "batchA2", id = "batchA23", data= t1Batch23Aggregate)
-      .addChild(fromId = "batchA3", id = "batchA23", data= t1Batch23Aggregate)
-      .addChild(fromId = "batchA12", id = "batchA1223", data= t1Batch123Aggregate)
-      .addChild(fromId = "batchA23", id = "batchA1223", data= t1Batch123Aggregate)
+      .addChild(fromId = "batchA1", id = "batchA12", data = t1Batch12Aggregate)
+      .addChild(fromId = "batchA2", id = "batchA12", data = t1Batch12Aggregate)
+      // A2 will be executed twice (A1 & A2) // (A2 & A3): A2 is evaluated at the same time ?
+      .addChild(fromId = "batchA2", id = "batchA23", data = t1Batch23Aggregate)
+      .addChild(fromId = "batchA3", id = "batchA23", data = t1Batch23Aggregate)
+      .addChild(fromId = "batchA12", id = "batchA1223", data = t1Batch123Aggregate)
+      .addChild(fromId = "batchA23", id = "batchA1223", data = t1Batch123Aggregate)
 
-      .addChild(fromId = "root", id = "t2RawFile",  data = t2RawFile)
+      .addChild(fromId = "root", id = "t2RawFile", data = t2RawFile)
       .addChild(fromId = "t2RawFile", id = "batchB1", data = t2BatchB1Modulo)
       .addChild(fromId = "t2RawFile", id = "batchB2", data = t2BatchB2Modulo)
       .addChild(fromId = "t2RawFile", id = "batchB3", data = t2BatchB3Modulo)
-      .addChild(fromId = "batchB1", id = "batchB4", data= t2Batch4Aggregate)
-      .addChild(fromId = "batchB2", id = "batchB4", data= t2Batch4Aggregate)
-      .addChild(fromId = "batchB3", id = "batchB4", data= t2Batch4Aggregate)
+      .addChild(fromId = "batchB1", id = "batchB4", data = t2BatchB4Aggregate)
+      .addChild(fromId = "batchB2", id = "batchB4", data = t2BatchB4Aggregate)
+      .addChild(fromId = "batchB3", id = "batchB4", data = t2BatchB4Aggregate)
+    tree
+  }
+
+  /**
+   *                (TableA)                  (TableB)
+   *                  |                       |
+   *               RawFileA________          RawFileB____
+   *               /       \       \        /       |     \
+   *            BatchA1 BatchA2 BatchA3  BatchB1 BatchB2 BatchB3
+   *                  \     /   /          \    |     /
+   *                 BatchA1223              BatchB4
+
+   *
+   * Vertices at the same level will be executed in //
+   * Vertices parent / child link is executed in serial
+   *
+   * RawFile1, RawFile2: read csv table 1, table2
+   * Batch12, Batch13: apply Modulo2
+   * Batch22, Batch23, Batch24: apply Modulo3
+   * Batch14, Batch25: reduce by applying  (pct_rate_of_growth +1) * (pct_rate_of_growth + 1)
+   */
+  def buildTree2: Tree[DataType] = {
+    val tree: Tree[DataType] = Tree.root[DataType](id = "root", data = DataType.Nothing)
+      .addChild(fromId = "root", id = "t1RawFile", data = t1RawFile)
+      .addChild(fromId = "t1RawFile", id = "batchA1", data = t1Batch1Modulo)
+      .addChild(fromId = "t1RawFile", id = "batchA2", data = t1Batch2Modulo)
+      .addChild(fromId = "t1RawFile", id = "batchA3", data = t1Batch3Modulo)
+      .addChild(fromId = "batchA1", id = "batchA12", data = t1Batch12Aggregate)
+      .addChild(fromId = "batchA2", id = "batchA12", data = t1Batch12Aggregate)
+      // A2 will be executed twice (A1 & A2) // (A2 & A3): A2 is evaluated at the same time ?
+      .addChild(fromId = "batchA3", id = "batchA1223", data = t1Batch23Aggregate)
+      .addChild(fromId = "batchA12", id = "batchA1223", data = t1Batch123Aggregate)
+
+      .addChild(fromId = "root", id = "t2RawFile", data = t2RawFile)
+      .addChild(fromId = "t2RawFile", id = "batchB1", data = t2BatchB1Modulo)
+      .addChild(fromId = "t2RawFile", id = "batchB2", data = t2BatchB2Modulo)
+      .addChild(fromId = "t2RawFile", id = "batchB3", data = t2BatchB3Modulo)
+      .addChild(fromId = "batchB1", id = "batchB4", data = t2BatchB4Aggregate)
+      .addChild(fromId = "batchB2", id = "batchB4", data = t2BatchB4Aggregate)
+      .addChild(fromId = "batchB3", id = "batchB4", data = t2BatchB4Aggregate)
+    tree
+  }
+
+  def run(@nowarn args: Array[String]): Unit = {
+    val tree: Tree[DataType] = buildTree
+
     println("begin run sync")
     val resultSync = runSync()
     println("end run sync")
@@ -171,11 +220,11 @@ object AdvancedExample2 {
     println("ok between sync and async")
     println()
     println("check tree traverse...")
-    checkTreeTraverse(tree)
+    //checkTreeTraverse(tree)
     println("check tree traverse: done")
     println()
     println("------------------------------")
-    println("asyncReactive: evalOnce here !")
+    println("asyncReactive: evalOnce here ! (check A2 is executed once or not")
     println("------------------------------")
     val resultAsyncReactive = Await.result(runAsyncReactive().runToFuture, Duration("5 seconds"))
     assert(resultAsyncReactive == resultSync)
@@ -186,7 +235,28 @@ object AdvancedExample2 {
     println()
     println("Result (2 tables) with general algorithm:")
     resultAsyncFromTree.foreach(println)
+    println("////")
+    println(resultAsyncFromTree)
+    println("---")
+    println(resultSync)
     assert(resultAsyncFromTree.contains(resultSync))
     println("ok between assync and asyncFromTree")
+  }
+
+  def run2(@nowarn args: Array[String]): Unit = {
+    import monix.execution.Scheduler.Implicits.global
+
+    val tree: Tree[DataType] = buildTree2
+    val expected = List("root", "t1RawFile", "batchA1", "batchA2", "batchA12", "batchA3", "batchA1223", "t2RawFile", "batchB1", "batchB2", "batchB3", "batchB4")
+    assert(tree.traverse(tree.findRoot).map(_.id).toSeq == expected)
+    val resultAsyncFromTree = Await.result(runAsyncFromTreeForAllTables(tree).runToFuture, Duration("5 seconds"))
+    val expectedRslt = TablePlant(Seq(
+      RowPlant("A",9),
+      RowPlant("B",28),
+      RowPlant("C",65),
+      RowPlant("D",21),
+      RowPlant("E",12))
+    )
+    assert(resultAsyncFromTree.contains(expectedRslt))
   }
 }
