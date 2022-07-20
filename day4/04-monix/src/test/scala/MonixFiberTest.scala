@@ -48,4 +48,21 @@ class MonixFiberTest extends MonixSpec {
   val f2 = Await.result(f.runToFuture, 2.seconds)
   Seq("A succeeded: 2", "B succeeded: 10") must contain(f2)
  }
+
+ "Synchro" must "xxx" in {
+  val t1: Task[Int] = Task(1)
+  val t2: Task[Int] = Task(2)
+  val t3: Task[Int] = Task(3)
+  val t1223: Task[Int] = for {
+   f1 <- t1.start
+   f2 <- t2.start
+   f3 <- t3.start
+   r12 <- Task.parZip2(f1.join, f2.join).map(t2 => t2._1 * t2._2)
+   r23 <- Task.parZip2(f2.join, f3.join).map(t2 => t2._1 * t2._2)
+  } yield {
+   r12 * r23
+  }
+  val r1223 = Await.result(t1223.runToFuture, 2.seconds)
+  r1223 mustBe 12
+ }
 }
