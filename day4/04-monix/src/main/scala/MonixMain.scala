@@ -13,5 +13,8 @@ object MonixMain {
     println()
     println("Pattern 2")
     AdvancedExample2.run2(args)
+    println()
+    println("Pattern 2 with Graph synchronization")
+    AdvancedExample2.runGraphPattern2(args)
   }
 }

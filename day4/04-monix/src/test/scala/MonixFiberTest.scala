@@ -49,14 +49,15 @@ class MonixFiberTest extends MonixSpec {
   Seq("A succeeded: 2", "B succeeded: 10") must contain(f2)
  }
 
- "Synchro" must "xxx" in {
-  val t1: Task[Int] = Task(1)
-  val t2: Task[Int] = Task(2)
-  val t3: Task[Int] = Task(3)
+ "Synchro of 1, 2 and 3" must "give 12 and 23 and then 1223" in {
+  val t1: Task[Fiber[Int]] = Task(1).start
+  val t2: Task[Fiber[Int]] = Task(2).start
+  val t3: Task[Fiber[Int]] = Task(3).start
+  // with for comprehension
   val t1223: Task[Int] = for {
-   f1 <- t1.start
-   f2 <- t2.start
-   f3 <- t3.start
+   f1 <- t1
+   f2 <- t2
+   f3 <- t3
    r12 <- Task.parZip2(f1.join, f2.join).map(t2 => t2._1 * t2._2)
    r23 <- Task.parZip2(f2.join, f3.join).map(t2 => t2._1 * t2._2)
   } yield {
@@ -64,5 +65,14 @@ class MonixFiberTest extends MonixSpec {
   }
   val r1223 = Await.result(t1223.runToFuture, 2.seconds)
   r1223 mustBe 12
+
+  // with flatMap
+  val t1223b: Task[Int] = t1.flatMap(f1 => t2.flatMap(f2 => t3.flatMap(f3 => {
+   val t12: Task[Int] = Task.parZip2(f1.join, f2.join).map(v12 => v12._1 * v12._2)
+   val t23: Task[Int] = Task.parZip2(f2.join, f3.join).map(v23 => v23._1 * v23._2)
+   t12.flatMap(r12 => t23.map(r23 => r12 * r23))
+  })))
+  val r1223b = Await.result(t1223b.runToFuture, 2.seconds)
+  r1223b mustBe 12
  }
 }

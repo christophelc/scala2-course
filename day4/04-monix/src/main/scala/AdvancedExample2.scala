@@ -120,6 +120,11 @@ object AdvancedExample2 {
     Task.sequence(tasks.map(task => task.map(env2TablePlant)))
   }
 
+  def runAsyncFromGraphForAllTables(tree: Tree[DataType]): Task[Seq[TablePlant]] = {
+    val tasks: Seq[Task[Env]] = GraphRuntime.schedule(tree)
+    Task.sequence(tasks.map(task => task.map(env2TablePlant)))
+  }
+
   /**
    *                (TableA)                  (TableB)
    *                  |                       |
@@ -169,7 +174,7 @@ object AdvancedExample2 {
    *               RawFileA________          RawFileB____
    *               /       \       \        /       |     \
    *            BatchA1 BatchA2 BatchA3  BatchB1 BatchB2 BatchB3
-   *                  \     /   /          \    |     /
+   *                  \     /   /          \      |     /
    *                 BatchA1223              BatchB4
 
    *
@@ -224,7 +229,7 @@ object AdvancedExample2 {
     println("check tree traverse: done")
     println()
     println("------------------------------")
-    println("asyncReactive: evalOnce here ! (check A2 is executed once or not")
+    println("asyncReactive: evalOnce here ! (check A2 is executed once or not)")
     println("------------------------------")
     val resultAsyncReactive = Await.result(runAsyncReactive().runToFuture, Duration("5 seconds"))
     assert(resultAsyncReactive == resultSync)
@@ -240,7 +245,14 @@ object AdvancedExample2 {
     println("---")
     println(resultSync)
     assert(resultAsyncFromTree.contains(resultSync))
-    println("ok between assync and asyncFromTree")
+    println("ok between async and asyncFromTree")
+    println()
+    println(
+      """With Graph runtime: A2 is still executed twice.
+        |task.start seems to be executed twice. Potential solution: wee may need only one for comprehension embedding A1.start, A2.start and A3.start
+        |""".stripMargin)
+    val resultAsyncFromGraph = Await.result(runAsyncFromGraphForAllTables(tree).runToFuture, Duration("5 seconds"))
+    assert(resultAsyncFromGraph.contains(resultSync))
   }
 
   def run2(@nowarn args: Array[String]): Unit = {
@@ -258,5 +270,22 @@ object AdvancedExample2 {
       RowPlant("E",12))
     )
     assert(resultAsyncFromTree.contains(expectedRslt))
+  }
+
+  def runGraphPattern2(@nowarn args: Array[String]): Unit = {
+    import monix.execution.Scheduler.Implicits.global
+
+    val tree: Tree[DataType] = buildTree2
+    val expected = List("root", "t1RawFile", "batchA1", "batchA2", "batchA12", "batchA3", "batchA1223", "t2RawFile", "batchB1", "batchB2", "batchB3", "batchB4")
+    assert(tree.traverse(tree.findRoot).map(_.id).toSeq == expected)
+    val resultAsyncFromGraph = Await.result(runAsyncFromGraphForAllTables(tree).runToFuture, Duration("5 seconds"))
+    val expectedRslt = TablePlant(Seq(
+      RowPlant("A",9),
+      RowPlant("B",28),
+      RowPlant("C",65),
+      RowPlant("D",21),
+      RowPlant("E",12))
+    )
+    assert(resultAsyncFromGraph.contains(expectedRslt))
   }
 }
