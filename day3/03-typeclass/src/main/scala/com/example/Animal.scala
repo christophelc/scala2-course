@@ -1,10 +1,13 @@
 package com.example
 
+// important: removing Animal here does not change anything ! typeclass is not about class inheritance
+
 // data
 sealed trait Animal
 final case class Dog(name: String)  extends Animal
 final case class Cat(name: String)  extends Animal
 final case class Bird(name: String) extends Animal
+
 
 ///////////////////////////////////////////////////
 // Behaviour API
