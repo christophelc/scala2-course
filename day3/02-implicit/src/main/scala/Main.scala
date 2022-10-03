@@ -1,4 +1,4 @@
-import com.example.{ BlockingTask, Context, Number }
+import com.example.{ BlockingTask, Show }
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -28,6 +28,22 @@ object Main {
     println("abc".bracket)
   }
 
+  def exampleTypeClass(): Unit = {
+    import com.example.Person
+    import com.example.SerializerInstance._
+
+    val person = Person("John", "Doe")
+
+    // first way to call show
+    println(Show.show(person))
+    println(Show.show(person.firstname))
+
+    // second way to call show
+    import com.example.Show._
+    println(person.show)
+    println(person.firstname.show)
+  }
+
   def main(args: Array[String]): Unit = {
     import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -44,6 +60,10 @@ object Main {
 
     println()
     println("String extension")
-    stringExtgension
+    stringExtgension()
+
+    println()
+    println("type class example")
+    exampleTypeClass()
   }
 }
