@@ -28,6 +28,24 @@ object Main {
     println("abc".bracket)
   }
 
+  def phantomType(): Unit = {
+    import com.example.{ Closed, Door, Open }
+
+    val door = Door[Open]().close
+    door match {
+      case _: Door[Closed] => println(s"Door closed")
+      case _               => println("Never reached !")
+    }
+    door.open match {
+      case _: Door[Open] => println(s"Door opened")
+      case _             => println("Never reached !")
+    }
+
+    // not compile
+    //Door[Closed]().close
+    //Door[Open]().open
+  }
+
   def main(args: Array[String]): Unit = {
     import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -45,5 +63,10 @@ object Main {
     println()
     println("String extension")
     stringExtgension()
+
+    println()
+    println("phantom type")
+    phantomType()
+    println()
   }
 }

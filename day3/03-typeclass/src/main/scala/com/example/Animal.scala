@@ -19,7 +19,7 @@ object JsonConverter {
   final class DogToJson(dog: Dog) extends ToJson[Dog] {
     override def toJson: String =
       s"""{
-         | 'type': 'dog,
+         | 'type': 'dog',
          | 'name' : '${dog.name}'
          |}""".stripMargin
   }
@@ -28,7 +28,7 @@ object JsonConverter {
   implicit final class CatToJson(cat: Cat) extends ToJson[Cat] {
     override def toJson: String =
       s"""{
-         | 'type': 'cat,
+         | 'type': 'cat',
          | 'name' : '${cat.name}'
          |}""".stripMargin
   }
